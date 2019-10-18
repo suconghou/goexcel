@@ -56,7 +56,7 @@ type resp struct {
 
 // Export excel
 func Export(w http.ResponseWriter, r *http.Request, match []string) error {
-	bs, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, 1048576))
+	bs, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, 10485760))
 	if err != nil {
 		if len(bs) <= 2 {
 			err = fmt.Errorf("bad request")
