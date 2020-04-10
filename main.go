@@ -11,15 +11,11 @@ import (
 
 func main() {
 	var (
-		port int
-		host string
+		port = flag.Int("p", 6060, "listen port")
+		host = flag.String("h", "", "bind address")
 	)
-	flag.IntVar(&port, "p", 6060, "listen port")
-	flag.StringVar(&host, "h", "", "bind address")
 	flag.Parse()
-	if err := serve(host, port); err != nil {
-		util.Log.Print(err)
-	}
+	util.Log.Fatal(serve(*host, *port))
 }
 
 func serve(host string, port int) error {
