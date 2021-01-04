@@ -1,15 +1,21 @@
 # goexcel
 
-
+```
 docker run --name goexcel -m 60m -d -p 7781:6060 --restart always suconghou/tools:goexcel
+```
 
-两种模式
+
+POST `^/xlsx/(.+)\.xlsx$` JSON数据格式
+
+将直接输出生成的文件流
+
+支持两种模式
 
 ## 1. 普通表单模式,上下结构 
 
 最多支持26列
 
-```
+```json
 {
 	"Sheet1":{
 		"categories":[
@@ -32,7 +38,7 @@ docker run --name goexcel -m 60m -d -p 7781:6060 --restart always suconghou/tool
 
 ## 2. 任意单元格模式
 
-```
+```json
 {
 	"Sheet1":{
         "dataMaps":{
@@ -46,3 +52,7 @@ docker run --name goexcel -m 60m -d -p 7781:6060 --restart always suconghou/tool
 	}
 }
 ```
+
+
+两种模式可以同时使用,第二种模式优先级更高.
+
