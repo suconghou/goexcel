@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
@@ -56,7 +55,7 @@ type resp struct {
 
 // Export excel
 func Export(w http.ResponseWriter, r *http.Request, match []string) error {
-	bs, err := ioutil.ReadAll(http.MaxBytesReader(w, r.Body, 10485760))
+	bs, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 10485760))
 	if err != nil {
 		if len(bs) <= 2 {
 			err = fmt.Errorf("bad request")
