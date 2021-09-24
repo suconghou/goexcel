@@ -4,9 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
+	"path/filepath"
 
-	"github.com/suconghou/goexcel/route"
-	"github.com/suconghou/goexcel/util"
+	"goexcel/route"
+	"goexcel/util"
 )
 
 func main() {
@@ -37,5 +40,25 @@ func routeMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func fallback(w http.ResponseWriter, r *http.Request) {
-	http.NotFound(w, r)
+	const index = "index.html"
+	files := []string{index}
+	if r.URL.Path != "/" {
+		files = []string{r.URL.Path, path.Join(r.URL.Path, index)}
+	}
+	if !tryFiles(files, w, r) {
+		http.NotFound(w, r)
+	}
+}
+
+func tryFiles(files []string, w http.ResponseWriter, r *http.Request) bool {
+	for _, file := range files {
+		realpath := filepath.Join("./public", file)
+		if f, err := os.Stat(realpath); err == nil {
+			if f.Mode().IsRegular() {
+				http.ServeFile(w, r, realpath)
+				return true
+			}
+		}
+	}
+	return false
 }

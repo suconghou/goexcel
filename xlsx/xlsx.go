@@ -6,39 +6,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/360EntSecGroup-Skylar/excelize"
-	"github.com/suconghou/vfs/util"
-)
+	"goexcel/util"
 
-var (
-	indexMap = map[int]string{
-		1:  "A",
-		2:  "B",
-		3:  "C",
-		4:  "D",
-		5:  "E",
-		6:  "F",
-		7:  "G",
-		8:  "H",
-		9:  "I",
-		10: "J",
-		11: "K",
-		12: "L",
-		13: "M",
-		14: "N",
-		15: "O",
-		16: "P",
-		17: "Q",
-		18: "R",
-		19: "S",
-		20: "T",
-		21: "U",
-		22: "V",
-		23: "W",
-		24: "X",
-		25: "Y",
-		26: "Z",
-	}
+	"github.com/xuri/excelize/v2"
 )
 
 // excelData data
@@ -53,22 +23,11 @@ type resp struct {
 	Msg  string `json:"msg"`
 }
 
-// Export excel
+// Export excel max 10MB json payload
 func Export(w http.ResponseWriter, r *http.Request, match []string) error {
-	bs, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 10485760))
-	if err != nil {
-		if len(bs) <= 2 {
-			err = fmt.Errorf("bad request")
-		}
-	}
-	if err != nil {
-		util.JSONPut(w, resp{-1, err.Error()})
-		return err
-	}
 	var data *excelData
-	err = json.Unmarshal(bs, &data)
-	if err != nil {
-		util.JSONPut(w, resp{-2, err.Error()})
+	if err := parse(w, r.Body, 10485760, &data); err != nil {
+		_, err = util.JSONPut(w, resp{-1, err.Error()})
 		return err
 	}
 	return excel(data, w)
@@ -78,18 +37,57 @@ func excel(data *excelData, w io.Writer) error {
 	f := excelize.NewFile()
 	for s, item := range *data {
 		for i, label := range item.Categories {
-			k := fmt.Sprintf("%s%d", indexMap[i+1], 1)
-			f.SetCellValue(s, k, label)
+			k := fmt.Sprintf("%s%d", column(i), 1)
+			if err := f.SetCellValue(s, k, label); err != nil {
+				return err
+			}
 		}
 		for i, vv := range item.Values {
 			for j, v := range vv {
-				k := fmt.Sprintf("%s%d", indexMap[j+1], i+2)
-				f.SetCellValue(s, k, v)
+				k := fmt.Sprintf("%s%d", column(j), i+2)
+				if err := f.SetCellValue(s, k, v); err != nil {
+					return err
+				}
 			}
 		}
 		for k, v := range item.DataMaps {
-			f.SetCellValue(s, k, v)
+			if err := f.SetCellValue(s, k, v); err != nil {
+				return err
+			}
 		}
 	}
 	return f.Write(w)
+}
+
+func parse(w http.ResponseWriter, r io.ReadCloser, n int64, v interface{}) error {
+	bs, err := io.ReadAll(http.MaxBytesReader(w, r, n))
+	if err == nil {
+		if len(bs) <= 2 {
+			err = fmt.Errorf("bad request")
+		}
+	}
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bs, &v)
+}
+
+func column(i int) string {
+	var (
+		ret = ""
+		fn  func(n int)
+	)
+	// fn 从下标1计算, 1=A 26=Z
+	fn = func(x int) {
+		x = x - 1
+		var a = x / 26
+		var r = x % 26
+		ret = string(rune(65+r)) + ret
+		if a > 0 {
+			fn(a)
+		}
+	}
+	// 我们的函数是0=A,25=Z,所以此处+1
+	fn(i + 1)
+	return ret
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"github.com/suconghou/goexcel/xlsx"
+	"goexcel/xlsx"
 )
 
 // 路由定义
